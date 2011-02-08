@@ -13,8 +13,8 @@ PACKAGE=zlib
 DOC=zlib
 include ../Makefile.defs
 
-LIBPL=		@PLTARGETS@
-TARGETS=	@TARGETS@
+LIBPL=		@ZLIB_PLTARGETS@
+TARGETS=	@ZLIB_TARGETS@
 
 ZOBJ=		zlib4pl.o
 
