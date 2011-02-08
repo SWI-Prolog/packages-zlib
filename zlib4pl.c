@@ -37,6 +37,8 @@
 #include "zutil.h"
 #endif
 
+install_t install_zlib4pl(void);
+
 static functor_t FUNCTOR_error2;	/* error(Formal, Context) */
 static functor_t FUNCTOR_type_error2;	/* type_error(Term, Expected) */
 static functor_t FUNCTOR_domain_error2;	/* domain_error(Term, Expected) */
@@ -93,7 +95,7 @@ domain_error(term_t actual, const char *domain)
 
 
 static int
-instantiation_error()
+instantiation_error(void)
 { term_t ex;
 
   if ( (ex = PL_new_term_ref()) &&
@@ -789,7 +791,7 @@ zdebug(term_t level)
 #define MKFUNCTOR(name, arity) PL_new_functor(PL_new_atom(name), arity)
 
 install_t
-install_zlib4pl()
+install_zlib4pl(void)
 { FUNCTOR_error2        = MKFUNCTOR("error", 2);
   FUNCTOR_type_error2   = MKFUNCTOR("type_error", 2);
   FUNCTOR_domain_error2 = MKFUNCTOR("domain_error", 2);
