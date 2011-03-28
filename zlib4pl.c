@@ -374,20 +374,23 @@ called with data in the buffer. It moves the remaining data to the start
 of the stream buffer and tries to read more data into the stream.
 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
+static void
+sync_stream(z_context *ctx)
+{ ctx->stream->bufp   = (char*)ctx->zstate.next_in;
+}
+
 static int
 read_more(z_context *ctx)
 { int c;
 
   DEBUG(1, Sdprintf("Short input, read_more()\n"));
 
-  ctx->stream->bufp   = (char*)ctx->zstate.next_in;
   ctx->stream->limitp =	ctx->stream->bufp + ctx->zstate.avail_in;
 
   if ( (c=S__fillbuf(ctx->stream)) != EOF )
   { Sungetc(c, ctx->stream);
     ctx->zstate.next_in  = (Bytef*)ctx->stream->bufp;
     ctx->zstate.avail_in = (long)(ctx->stream->limitp - ctx->stream->bufp);
-    ctx->stream->bufp    = ctx->stream->limitp;
 
     return 0;
   }
@@ -409,7 +412,6 @@ zread(void *handle, char *buf, size_t size)
     { ctx->zstate.next_in  = (Bytef*)ctx->stream->bufp;
       ctx->zstate.avail_in = (long)(ctx->stream->limitp - ctx->stream->bufp);
       DEBUG(1, Sdprintf("Set avail_in to %d\n", ctx->zstate.avail_in));
-      ctx->stream->bufp    = ctx->stream->limitp; /* empty buffer */
     }
   }
 
@@ -440,9 +442,13 @@ zread(void *handle, char *buf, size_t size)
       DEBUG(1, Sdprintf("Skipped gzip header (%d bytes)\n", m));
       ctx->zstate.next_in = p;
       ctx->zstate.avail_in -= m;
+      sync_stream(ctx);
 
 					/* init without header */
-      switch(inflateInit2(&ctx->zstate, -MAX_WBITS))
+      rc = inflateInit2(&ctx->zstate, -MAX_WBITS);
+      sync_stream(ctx);
+
+      switch( rc )
       { case Z_OK:
 	  ctx->initialized = TRUE;
 	  ctx->crc = crc32(0L, Z_NULL, 0);
@@ -457,7 +463,10 @@ zread(void *handle, char *buf, size_t size)
 	  return -1;
       }
     } else
-    { switch(inflateInit(&ctx->zstate))
+    { rc = inflateInit(&ctx->zstate);
+      sync_stream(ctx);
+
+      switch( rc )
       { case Z_OK:
 	  ctx->format = F_DEFLATE;
 	  ctx->initialized = TRUE;
@@ -478,27 +487,25 @@ zread(void *handle, char *buf, size_t size)
     while( (rc=gz_skip_footer(ctx)) == -2 )
     { int rc2;
 
+      sync_stream(ctx);
       if ( (rc2=read_more(ctx)) < 0 )
 	return -1;
     }
 
+    sync_stream(ctx);
+
     if ( rc == 0 )
-    { int avail = ctx->zstate.avail_in;
-
-					/* copy back unprocessed bytes */
-      DEBUG(1, Sdprintf("GZIP footer ok; copying %d bytes back\n", avail));
-      memmove(ctx->stream->buffer, ctx->zstate.next_in, avail);
-      ctx->stream->bufp   = ctx->stream->buffer;
-      ctx->stream->limitp = ctx->stream->bufp + avail;
-
-      return 0;			/* EOF */
+    { return 0;			/* EOF */
     } else
     { DEBUG(1, Sdprintf("GZIP CRC/length error\n"));
       return -1;
     }
   }
 
-  switch((rc=inflate(&ctx->zstate, Z_NO_FLUSH)))
+  rc = inflate(&ctx->zstate, Z_NO_FLUSH);
+  sync_stream(ctx);
+
+  switch( rc )
   { case Z_OK:
     case Z_STREAM_END:
     { long n = (long)(size - ctx->zstate.avail_out);
