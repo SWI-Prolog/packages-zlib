@@ -378,6 +378,8 @@ static int
 read_more(z_context *ctx)
 { int c;
 
+  DEBUG(1, Sdprintf("Short input, read_more()\n"));
+
   ctx->stream->bufp   = (char*)ctx->zstate.next_in;
   ctx->stream->limitp =	ctx->stream->bufp + ctx->zstate.avail_in;
 
