@@ -39,10 +39,6 @@
 
 install_t install_zlib4pl(void);
 
-static functor_t FUNCTOR_error2;	/* error(Formal, Context) */
-static functor_t FUNCTOR_type_error2;	/* type_error(Term, Expected) */
-static functor_t FUNCTOR_domain_error2;	/* domain_error(Term, Expected) */
-
 static atom_t ATOM_format;		/* format(Format) */
 static atom_t ATOM_level;		/* level(Int) */
 static atom_t ATOM_close_parent;	/* close_parent(Bool) */
@@ -55,84 +51,6 @@ static int debuglevel = 0;
 #else
 #define DEBUG(n, g) (void)0
 #endif
-
-		 /*******************************
-		 *	       ERRORS		*
-		 *******************************/
-
-static int
-type_error(term_t actual, const char *expected)
-{ term_t ex;
-
-  if ( (ex = PL_new_term_ref()) &&
-       PL_unify_term(ex,
-		     PL_FUNCTOR, FUNCTOR_error2,
-		       PL_FUNCTOR, FUNCTOR_type_error2,
-		         PL_CHARS, expected,
-		         PL_TERM, actual,
-		       PL_VARIABLE) )
-    return PL_raise_exception(ex);
-
-  return FALSE;
-}
-
-
-static int
-domain_error(term_t actual, const char *domain)
-{ term_t ex;
-
-  if ( (ex = PL_new_term_ref()) &&
-       PL_unify_term(ex,
-		     PL_FUNCTOR, FUNCTOR_error2,
-		       PL_FUNCTOR, FUNCTOR_domain_error2,
-		         PL_CHARS, domain,
-		         PL_TERM, actual,
-		       PL_VARIABLE) )
-  return PL_raise_exception(ex);
-
-  return FALSE;
-}
-
-
-static int
-instantiation_error(void)
-{ term_t ex;
-
-  if ( (ex = PL_new_term_ref()) &&
-       PL_unify_term(ex,
-		     PL_FUNCTOR, FUNCTOR_error2,
-		       PL_CHARS, "instantiation_error",
-		       PL_VARIABLE) )
-    return PL_raise_exception(ex);
-
-  return FALSE;
-}
-
-
-static int
-get_atom_ex(term_t t, atom_t *a)
-{ if ( PL_get_atom(t, a) )
-    return TRUE;
-
-  return type_error(t, "atom");
-}
-
-static int
-get_int_ex(term_t t, int *i)
-{ if ( PL_get_integer(t, i) )
-    return TRUE;
-
-  return type_error(t, "integer");
-}
-
-static int
-get_bool_ex(term_t t, int *i)
-{ if ( PL_get_bool(t, i) )
-    return TRUE;
-
-  return type_error(t, "boolean");
-}
-
 
 		 /*******************************
 		 *	       TYPES		*
@@ -713,32 +631,32 @@ pl_zopen(term_t org, term_t new, term_t options)
     term_t arg = PL_new_term_ref();
 
     if ( !PL_get_name_arity(head, &name, &arity) || arity != 1 )
-      return type_error(head, "option");
+      return PL_type_error("option", head);
     _PL_get_arg(1, head, arg);
 
     if ( name == ATOM_format )
     { atom_t a;
 
-      if ( !get_atom_ex(arg, &a) )
+      if ( !PL_get_atom_ex(arg, &a) )
 	return FALSE;
       if ( a == ATOM_gzip )
 	fmt = F_GZIP;
       else if ( a == ATOM_deflate )
 	fmt = F_DEFLATE;
       else
-	return domain_error(arg, "compression_format");
+	return PL_domain_error("compression_format", arg);
     } else if ( name == ATOM_level )
-    { if ( !get_int_ex(arg, &level) )
+    { if ( !PL_get_integer_ex(arg, &level) )
 	return FALSE;
       if ( level < 0 || level > 9 )
-	return domain_error(arg, "compression_level");
+	return PL_domain_error("compression_level", arg);
     } else if ( name == ATOM_close_parent )
-    { if ( !get_bool_ex(arg, &close_parent) )
+    { if ( !PL_get_bool_ex(arg, &close_parent) )
 	return FALSE;
     }
   }
-  if ( !PL_get_nil(tail) )
-    return type_error(tail, "list");
+  if ( !PL_get_nil_ex(tail) )
+    return FALSE;
 
   if ( !PL_get_stream_handle(org, &s) )
     return FALSE;			/* Error */
@@ -781,7 +699,7 @@ pl_zopen(term_t org, term_t new, term_t options)
   } else
   { ctx->close_parent = FALSE;
     Sclose(s2);
-    return instantiation_error();
+    return PL_instantiation_error(new);	/* actually, over instantiation */
   }
 }
 
@@ -801,11 +719,7 @@ zdebug(term_t level)
 
 install_t
 install_zlib4pl(void)
-{ FUNCTOR_error2        = MKFUNCTOR("error", 2);
-  FUNCTOR_type_error2   = MKFUNCTOR("type_error", 2);
-  FUNCTOR_domain_error2 = MKFUNCTOR("domain_error", 2);
-
-  ATOM_format       = PL_new_atom("format");
+{ ATOM_format       = PL_new_atom("format");
   ATOM_level        = PL_new_atom("level");
   ATOM_close_parent = PL_new_atom("close_parent");
   ATOM_gzip	    = PL_new_atom("gzip");
