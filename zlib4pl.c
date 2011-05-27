@@ -349,7 +349,12 @@ zread(void *handle, char *buf, size_t size)
       { int rc;
 
 	if ( (rc=read_more(ctx)) < 0 )
+	{ if ( !Sferror(ctx->stream) )
+	  { p = NULL;
+	    break;
+	  }
 	  return -1;
+	}
       }
     }
 

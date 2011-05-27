@@ -76,6 +76,18 @@ test(deflate,
 	close(ZIn),
 	Codes == Codes1.
 
+test(deflate,					% test empty file
+     [ cleanup(delete_file('plunit-tmp.z'))
+     ]) :-
+	open('plunit-tmp.z', write, Out),
+	zopen(Out, ZOut, []),
+	close(ZOut),
+	open('plunit-tmp.z', read, In),
+	zopen(In, ZIn, []),
+	read_stream_to_codes(ZIn, Codes1),
+	close(ZIn),
+	Codes1 == [].
+
 %	zstream: test compressed stream flushing and processing
 
 test(zstream, Exit == true) :-
