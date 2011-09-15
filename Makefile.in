@@ -27,9 +27,9 @@ zlib4pl.@SO@:	$(ZOBJ)
 		$(LD) $(LDSOFLAGS) -o $@ $(ZOBJ) @LIBS@
 
 install:	$(TARGETS) $(LIBPL)
-		mkdir -p $(DESTDIR)$(PLBASE)/lib/$(PLARCH)
+		mkdir -p $(DESTDIR)$(PLBASE)/lib/$(INSTALL_PLARCH)
 		for f in $(TARGETS); do \
-		  $(INSTALL_PROGRAM) $$f $(DESTDIR)$(PLBASE)/lib/$(PLARCH); \
+		  $(INSTALL_PROGRAM) $$f $(DESTDIR)$(PLBASE)/lib/$(INSTALL_PLARCH); \
 		done
 		mkdir -p $(DESTDIR)$(PLBASE)/library
 		for f in $(LIBPL); do \
@@ -51,7 +51,7 @@ pdf-install::
 		$(INSTALL) -m 644 $(DOC).pdf $(DESTDIR)$(PKGDOC)
 
 uninstall::
-		(cd $(PLBASE)/lib/$(PLARCH) && rm -f $(TARGETS))
+		(cd $(PLBASE)/lib/$(INSTALL_PLARCH) && rm -f $(TARGETS))
 		(cd $(PLBASE)/library && rm -f $(LIBPL))
 		$(PL) -f none -g make -t halt
 
