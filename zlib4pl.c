@@ -30,12 +30,6 @@
 #include <assert.h>
 #include <time.h>
 #include <zlib.h>
-/* Some distributions do not include this ... */
-#ifdef HAVE_ZUTIL_H
-#include <zutil.h>
-#else
-#include "zutil.h"
-#endif
 
 install_t install_zlib4pl(void);
 
@@ -61,7 +55,6 @@ static int debuglevel = 0;
 typedef enum
 { F_UNKNOWN = 0,
   F_GZIP,				/* gzip output */
-  F_GZIP_CRC,				/* end of gzip output */
   F_DEFLATE				/* zlib data */
 } zformat;
 
@@ -71,7 +64,6 @@ typedef struct z_context
   int		    close_parent;	/* close parent on close */
   int		    initialized;	/* did inflateInit()? */
   zformat	    format;		/* current format */
-  uLong		    crc;		/* CRC check */
   z_stream	    zstate;		/* Zlib state */
 } z_context;
 
@@ -100,220 +92,12 @@ free_zcontext(z_context *ctx)
 
 
 		 /*******************************
-		 *	     GZIP HEADER	*
-		 *******************************/
-
-/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-Code based on gzio.c from the zlib source distribution.
-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
-
-static int gz_magic[2] = {0x1f, 0x8b}; /* gzip magic header */
-
-/* gzip flag byte */
-#define ASCII_FLAG   0x01 /* bit 0 set: file probably ascii text */
-#define HEAD_CRC     0x02 /* bit 1 set: header CRC present */
-#define EXTRA_FIELD  0x04 /* bit 2 set: extra field present */
-#define ORIG_NAME    0x08 /* bit 3 set: original file name present */
-#define COMMENT      0x10 /* bit 4 set: file comment present */
-#define RESERVED     0xE0 /* bits 5..7: reserved */
-
-/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-gz_skip_header() parses the gzip file-header.  return
-
-	* If ok: pointer to first byte following header
-	* If not a gzip file: NULL
-	* If still ok, but incomplete: GZHDR_SHORT
-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
-
-#define HDR_SHORT ((Bytef*)-1)		/* Header is incomplete */
-#define SKIP_STRING \
-	{ while ( *in && avail > 0 ) \
-	    in++, avail--; \
-	  if ( avail > 0 ) \
-	    in++, avail--; \
-	}
-
-static Bytef *
-gz_skip_header(z_context *ctx, Bytef *in, int avail)
-{ int method; /* method byte */
-  int flags;  /* flags byte */
-  int len;
-
-  if ( avail < 10 )			/* 2-byte magic, method, flags, */
-    return HDR_SHORT;			/* time, xflags and OS code */
-
-  if ( in[0] != gz_magic[0] &&
-       in[1] != gz_magic[1] )
-    return NULL;
-  in += 2;
-
-  method = *in++;
-  flags  = *in++;
-  if ( method != Z_DEFLATED || (flags & RESERVED ) != 0)
-    return NULL;
-
-  in += 6;				/* Discard time, xflags and OS code */
-  avail -= 10;
-
-  if ((flags & EXTRA_FIELD) != 0)
-  { /* skip the extra field */
-    len  =  *in++;
-    len += (*in++)<<8;
-    len &= 0xffff;
-
-    if ( avail > len )
-    { in += len;
-      avail -= len;
-    } else
-    { return HDR_SHORT;
-    }
-  }
-  if ((flags & ORIG_NAME) != 0)
-  { /* skip the original file name */
-    SKIP_STRING
-  }
-  if ((flags & COMMENT) != 0)
-  {   /* skip the .gz file comment */
-    SKIP_STRING
-  }
-  if ((flags & HEAD_CRC) != 0)
-  {  /* skip the header crc */
-    in += 2;
-    avail -= 2;
-  }
-
-  if ( avail <= 0 )
-    return HDR_SHORT;
-
-  return in;
-}
-
-
-static int
-write_ulong_lsb(IOSTREAM *s, unsigned long x)
-{ Sputc((x)    &0xff, s);
-  Sputc((x>>8) &0xff, s);
-  Sputc((x>>16)&0xff, s);
-  Sputc((x>>24)&0xff, s);
-
-  return Sferror(s) ? -1 : 0;
-}
-
-
-static int
-write_gzip_header(z_context *ctx)
-{ IOSTREAM *s = ctx->stream;
-  time_t stamp = time(NULL);
-
-  Sputc(gz_magic[0], s);
-  Sputc(gz_magic[1], s);
-  Sputc(Z_DEFLATED, s);			/* method */
-  Sputc(0, s);				/* flags */
-  write_ulong_lsb(s, (unsigned long)stamp); /* time stamp */
-  Sputc(0, s);				/* xflags */
-  Sputc(OS_CODE, s);			/* OS identifier */
-
-  return Sferror(s) ? FALSE : TRUE;	/* TBD: Error */
-}
-
-
-static int
-write_gzip_footer(z_context *ctx)
-{ IOSTREAM *s = ctx->stream;
-
-  write_ulong_lsb(s, ctx->crc);		/* CRC32 */
-  write_ulong_lsb(s, ctx->zstate.total_in);	/* Total length */
-
-  return Sferror(s) ? -1 : 0;
-}
-
-
-static Bytef *
-get_ulong_lsb(const Bytef *in, uLong *v)
-{ *v = (in[0] |
-	in[1] << 8 |
-	in[2] << 16 |
-	in[3] << 24) & 0xffffffff;
-
-  return (Bytef*)in+4;
-}
-
-
-/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-	0: ok
-       -1: CRC/size error
-       -2: not enough data
-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
-
-
-static int
-gz_skip_footer(z_context *ctx)
-{ if ( ctx->zstate.avail_in >= 8 )
-  { uLong crc, size;
-    Bytef *in = ctx->zstate.next_in;
-
-    in = get_ulong_lsb(in, &crc);
-    in = get_ulong_lsb(in, &size);
-
-    ctx->zstate.next_in = in;
-    ctx->zstate.avail_in -= 8;
-
-    if ( crc != ctx->crc )
-    { char msg[256];
-
-      Ssprintf(msg, "CRC error (%08lx != %08lx)", crc, ctx->crc);
-      Sseterr(ctx->zstream, SIO_FERR, msg);
-      return -1;
-    }
-					/* size is truncated to 4 bytes */
-    if ( size != (ctx->zstate.total_out & 0xffffffff) )
-    { char msg[256];
-
-      Ssprintf(msg, "Size mismatch (%ld != %ld)", size, ctx->zstate.total_out);
-      Sseterr(ctx->zstream, SIO_FERR, msg);
-      return -1;
-    }
-
-    return 0;
-  }
-
-  return -2;
-}
-
-
-		 /*******************************
 		 *	       GZ I/O		*
 		 *******************************/
-
-/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-read_more() reads more data into the   zstate buffer if deflating cannot
-do anything with the available  bytes.   Note  that  S__fillbuf() can be
-called with data in the buffer. It moves the remaining data to the start
-of the stream buffer and tries to read more data into the stream.
-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 static void
 sync_stream(z_context *ctx)
 { ctx->stream->bufp   = (char*)ctx->zstate.next_in;
-}
-
-static int
-read_more(z_context *ctx)
-{ int c;
-
-  DEBUG(1, Sdprintf("Short input, read_more()\n"));
-
-  ctx->stream->limitp =	ctx->stream->bufp + ctx->zstate.avail_in;
-
-  if ( (c=S__fillbuf(ctx->stream)) != EOF )
-  { Sungetc(c, ctx->stream);
-    ctx->zstate.next_in  = (Bytef*)ctx->stream->bufp;
-    ctx->zstate.avail_in = (long)(ctx->stream->limitp - ctx->stream->bufp);
-
-    return 0;
-  }
-
-  return -1;
 }
 
 
@@ -338,91 +122,15 @@ zread(void *handle, char *buf, size_t size)
   ctx->zstate.avail_out = (long)size;
 
   if ( ctx->initialized == FALSE )
-  { Bytef *p;
-
-    DEBUG(1, Sdprintf("Trying gzip header\n"));
-    if ( ctx->format == F_DEFLATE )
-    { p = NULL;
-    } else
-    { while( (p = gz_skip_header(ctx, ctx->zstate.next_in,
-				 ctx->zstate.avail_in)) == HDR_SHORT )
-      { int rc;
-
-	if ( (rc=read_more(ctx)) < 0 )
-	{ if ( !Sferror(ctx->stream) )
-	  { p = NULL;
-	    break;
-	  }
-	  return -1;
-	}
-      }
-    }
-
-    if ( p )
-    { long m = (int)(p - ctx->zstate.next_in);
-
-      ctx->format = F_GZIP;
-      DEBUG(1, Sdprintf("Skipped gzip header (%d bytes)\n", m));
-      ctx->zstate.next_in = p;
-      ctx->zstate.avail_in -= m;
-      sync_stream(ctx);
-
-					/* init without header */
-      rc = inflateInit2(&ctx->zstate, -MAX_WBITS);
-      sync_stream(ctx);
-
-      switch( rc )
-      { case Z_OK:
-	  ctx->initialized = TRUE;
-	  ctx->crc = crc32(0L, Z_NULL, 0);
-	  DEBUG(1, Sdprintf("inflateInit2(): Z_OK\n"));
-	  break;
-	case Z_MEM_ERROR:		/* no memory */
-        case Z_VERSION_ERROR:		/* bad library version */
-	  PL_warning("ERROR: TBD");
-	  return -1;
-	default:
-	  assert(0);
-	  return -1;
-      }
-    } else
+  { if ( ctx->format == F_GZIP )
+    { rc = inflateInit2(&ctx->zstate, MAX_WBITS+16);
+    } else if ( ctx->format == F_DEFLATE )
     { rc = inflateInit(&ctx->zstate);
-      sync_stream(ctx);
-
-      switch( rc )
-      { case Z_OK:
-	  ctx->format = F_DEFLATE;
-	  ctx->initialized = TRUE;
-	  DEBUG(1, Sdprintf("inflateInit(): Z_OK\n"));
-	  break;
-	case Z_MEM_ERROR:		/* no memory */
-        case Z_VERSION_ERROR:		/* bad library version */
-	  PL_warning("ERROR: TBD");
-	  return -1;
-	default:
-	  assert(0);
-	  return -1;
-      }
-    }
-  } else if ( ctx->format == F_GZIP_CRC )
-  { int rc;
-
-    while( (rc=gz_skip_footer(ctx)) == -2 )
-    { int rc2;
-
-      sync_stream(ctx);
-      if ( (rc2=read_more(ctx)) < 0 )
-	return -1;
-    }
-
-    sync_stream(ctx);
-
-    if ( rc == 0 )
-    { return 0;			/* EOF */
     } else
-    { DEBUG(1, Sdprintf("GZIP CRC/length error\n"));
-      return -1;
+    { rc = inflateInit2(&ctx->zstate, MAX_WBITS+32);
     }
+    ctx->initialized = TRUE;
+    sync_stream(ctx);
   }
 
   rc = inflate(&ctx->zstate, Z_NO_FLUSH);
@@ -433,14 +141,8 @@ zread(void *handle, char *buf, size_t size)
     case Z_STREAM_END:
     { long n = (long)(size - ctx->zstate.avail_out);
 
-      if ( ctx->format == F_GZIP && n > 0 )
-	ctx->crc = crc32(ctx->crc, (Bytef*)buf, n);
-
       if ( rc == Z_STREAM_END )
       { DEBUG(1, Sdprintf("Z_STREAM_END: %d bytes\n", n));
-
-	if ( ctx->format == F_GZIP )
-	  ctx->format = F_GZIP_CRC;
       } else
       { DEBUG(1, Sdprintf("inflate(): Z_OK: %d bytes\n", n));
 	if (n == 0 && rc != Z_STREAM_END)
@@ -488,8 +190,6 @@ zwrite4(void *handle, char *buf, size_t size, int flush)
 
   ctx->zstate.next_in = (Bytef*)buf;
   ctx->zstate.avail_in = (long)size;
-  if ( ctx->format == F_GZIP && size > 0 )
-    ctx->crc = crc32(ctx->crc, ctx->zstate.next_in, ctx->zstate.avail_in);
 
   DEBUG(1, Sdprintf("Compressing %d bytes\n", ctx->zstate.avail_in));
   do
@@ -564,8 +264,6 @@ zclose(void *handle)
   { rc = inflateEnd(&ctx->zstate);
   } else
   { rc = zwrite4(handle, NULL, 0, Z_FINISH);	/* flush */
-    if ( rc == 0 && ctx->format == F_GZIP )
-      rc = write_gzip_footer(ctx);
     if ( rc == 0 )
       rc = deflateEnd(&ctx->zstate);
     else
@@ -672,11 +370,7 @@ pl_zopen(term_t org, term_t new, term_t options)
   { int rc;
 
     if ( fmt == F_GZIP )
-    { if ( write_gzip_header(ctx) < 0 )
-      { free_zcontext(ctx);
-	return FALSE;
-      }
-      rc = deflateInit2(&ctx->zstate, level, Z_DEFLATED, -MAX_WBITS, DEF_MEM_LEVEL, 0);
+    { rc = deflateInit2(&ctx->zstate, level, Z_DEFLATED, MAX_WBITS+16, MAX_MEM_LEVEL, 0);
     } else
     { rc = deflateInit(&ctx->zstate, level);
     }
