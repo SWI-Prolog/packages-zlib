@@ -6,8 +6,8 @@
 \makeindex
 
 \onefile
-\htmloutput{html}				% Output directory
-\htmlmainfile{index}				% Main document file
+\htmloutput{.}					% Output directory
+\htmlmainfile{zlib}				% Main document file
 \bodycolor{white}				% Page colour
 
 \begin{document}
@@ -100,7 +100,7 @@ Either \const{deflate} (default) or \const{gzip}. The \const{deflate}
 envelope is simple and short and is typically used for compressed
 (network) communication.  The \const{gzip} envelope is compatible to
 the \program{gzip} program and intended to read/write compressed files.
-	
+
 	\termitem{level}{+Level}
 Number between 0 and 9, specifying the compression level, Higher levels
 use more resources. Default is 6, generally believed to be a good
