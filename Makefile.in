@@ -24,7 +24,7 @@ nolib::
 		@echo "WARNING: Could not find zlib library; skipped"
 
 zlib4pl.@SO@:	$(ZOBJ)
-		$(LD) $(LDSOFLAGS) -o $@ $(ZOBJ) @LIBS@
+		$(LD) -o $@ $(ZOBJ) @LIBS@ $(LDSOFLAGS)
 
 install:	$(TARGETS) $(LIBPL)
 		mkdir -p $(DESTDIR)$(SOLIBDIR)
