@@ -1,11 +1,10 @@
-/*  $Id$
-
-    Part of SWI-Prolog
+/*  Part of SWI-Prolog
 
     Author:        Jan Wielemaker
-    E-mail:        wielemak@science.uva.nl
+    E-mail:        J.Wielemaker@vu.nl
     WWW:           http://www.swi-prolog.org
-    Copyright (C): 2006, University of Amsterdam
+    Copyright (C): 2006-2012, University of Amsterdam
+			      VU University Amsterdam
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Lesser General Public
@@ -138,22 +137,27 @@ zread(void *handle, char *buf, size_t size)
 
   switch( rc )
   { case Z_OK:
+    { long n = (long)(size - ctx->zstate.avail_out);
+
+      DEBUG(1, Sdprintf("inflate(): Z_OK: %d bytes\n", n));
+
+      if ( n == 0 )
+      { /* If we get here then there was not enough data in the in buffer
+           to decode a single character, but we are not at the end of the
+           stream, so we must read
+	   more from the parent
+	*/
+	DEBUG(1, Sdprintf("Not enough data to decode.  Retrying\n"));
+
+	return zread(handle, buf, size);
+      }
+
+      return n;
+    }
     case Z_STREAM_END:
     { long n = (long)(size - ctx->zstate.avail_out);
 
-      if ( rc == Z_STREAM_END )
-      { DEBUG(1, Sdprintf("Z_STREAM_END: %d bytes\n", n));
-      } else
-      { DEBUG(1, Sdprintf("inflate(): Z_OK: %d bytes\n", n));
-	if (n == 0 && rc != Z_STREAM_END)
-        { /* If we get here then there was not enough data in the in buffer to decode
-             a single character, but we are not at the end of the stream, so we must read
-	     more from the parent */
-          DEBUG(1, Sdprintf("Not enough data to decode.  Retrying\n"));
-
-          return zread(handle, buf, size);
-	}
-      }
+      DEBUG(1, Sdprintf("Z_STREAM_END: %d bytes\n", n));
 
       return n;
     }
