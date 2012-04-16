@@ -103,13 +103,10 @@ sync_stream(z_context *ctx)
 static ssize_t				/* inflate */
 zread(void *handle, char *buf, size_t size)
 { z_context *ctx = handle;
-  int flush = Z_SYNC_FLUSH;
   int rc;
 
   if ( ctx->zstate.avail_in == 0 )
-  { if ( Sfeof(ctx->stream) )
-    { flush = Z_FINISH;
-    } else
+  { if ( !Sfeof(ctx->stream) )
     { ctx->zstate.next_in  = (Bytef*)ctx->stream->bufp;
       ctx->zstate.avail_in = (long)(ctx->stream->limitp - ctx->stream->bufp);
       DEBUG(1, Sdprintf("Set avail_in to %d\n", ctx->zstate.avail_in));
