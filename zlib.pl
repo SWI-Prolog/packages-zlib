@@ -39,6 +39,16 @@
 :- use_module(library(error)).
 :- use_module(library(apply)).
 
+:- predicate_options(zopen/3, 3,
+		     [ format(oneof([gzip,deflate])),
+		       multi_part(boolean),
+		       close_parent(boolean),
+		       level(between(0,9))
+		     ]).
+:- predicate_options(gzopen/4, 4,
+		     [ pass_to(zopen/3, 3),
+		       pass_to(open/4, 4)
+		     ]).
 
 /** <module> Zlib wrapper for SWI-Prolog
 
@@ -76,4 +86,5 @@ gzopen(File, Mode, Stream, Options) :-
 	      ]).
 
 zoption(format(_)).
+zoption(multi_part(_)).
 zoption(level(_)).

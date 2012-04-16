@@ -14,10 +14,10 @@
 
 \title{SWI-Prolog binding to zlib}
 \author{Jan Wielemaker \\
-	HCS, \\
 	University of Amsterdam \\
+	VU University Amsterdam \\
 	The Netherlands \\
-	E-mail: \email{wielemak@science.uva.nl}}
+	E-mail: \email{J.Wielemaker@vu.nl}}
 
 \maketitle
 
@@ -105,6 +105,10 @@ the \program{gzip} program and intended to read/write compressed files.
 Number between 0 and 9, specifying the compression level, Higher levels
 use more resources. Default is 6, generally believed to be a good
 compromise between speed, memory requirement and compression.
+
+	\termitem{multi_part}{+Boolean}
+If \const{true}, restart reading if the input is not at end-of-file. The
+default is \const{true} for gzip streams.
     \end{description}
 
 Generic options are:

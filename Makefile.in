@@ -59,8 +59,13 @@ uninstall::
 # Testing
 ################################################################
 
-check::
+check:		test_multipart.gz
 		$(PL) -q -f test_zlib.pl -g test_zlib,halt -t 'halt(1)'
+
+test_multipart.gz:
+		echo "Part1" | gzip > $@
+		echo "Part2" | gzip >> $@
+
 
 ################################################################
 # Clean
