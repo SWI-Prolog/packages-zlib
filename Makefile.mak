@@ -2,7 +2,7 @@
 # Build the SWI-Prolog zlib package for MS-Windows
 #
 # Author: Jan Wielemaker
-# 
+#
 # Use:
 #	nmake /f Makefile.mak
 #	nmake /f Makefile.mak install
@@ -12,12 +12,8 @@ PLHOME=..\..
 !include $(PLHOME)\src\rules.mk
 CFLAGS=$(CFLAGS) /D__SWI_PROLOG__
 
-!IF "$(MD)" == "WIN64"
 ZLIB=ZLIBWAPI
 CFLAGS=$(CFLAGS) /DZLIB_WINAPI
-!ELSE
-ZLIB=ZLIB1
-!ENDIF
 
 OBJ=		zlib4pl.obj
 
