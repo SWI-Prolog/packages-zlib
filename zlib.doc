@@ -68,16 +68,16 @@ gziped file can also be opened in Prolog using the code below.
 	...
 \end{code}
 
-The advantage of this library for such tasks is enhanced platform
-independence and reduced time to open a file. Platform independence is
-improved as we do not have to worry about availability of the
-\program{gunzip} utility and we do not have to worry about shell and
-filename quoting issues. While the above works well on most modern Unix
-systems, it only works with special precautions on Windows.%
-	\footnote{Install gunzip, deal with Windows path-names, the
-		  windows shell and quoting.}
+The advantage of this library over using an external program for such
+tasks is enhanced platform independence and reduced time to open a file.
+Platform independence is improved as we do not have to worry about
+availability of the \program{gunzip} utility and we do not have to worry
+about shell and filename quoting issues. While the above replacement
+code works well on most modern Unix systems, it only works with special
+precautions on Windows.\footnote{Install gunzip, deal with Windows
+path-names, the windows shell and quoting.}
 
-The library becomes really valuable if we consider compressed network
+The library becomes unavoidable if we consider compressed network
 communication. Here we get the stream from tcp_open_socket/3. The
 library provides efficient creation of a compressed stream, as well as
 support for flushing output through the standard Prolog flush_output/1
@@ -89,10 +89,15 @@ call.
 \begin{description}
     \predicate{zopen}{3}{+Stream, -ZStream, +Options}
 Creates \arg{ZStream}, providing compressed access to \arg{Stream}. If
-an input stream is wrapped, it recognises a gzip or deflate header.
+an input stream is wrapped, it recognises a gzip or deflate header. If
+an output stream is wrapped, \arg{Options} define the desired wrapper
+and compression level. The new \arg{ZStream} inherits its
+\jargon{encoding} from \arg{Stream}. In other words, if \arg{Stream} is
+a text-stream, so is \arg{ZStream}. The original \arg{Stream} is
+switched to binary mode while it is wrapped. The original encoding of
+\arg{Stream} is restored if \arg{ZStream} is closed.
 
-If an output stream is enabled, \arg{Options} define the desired wrapper
-and compression level. Defined options on output streams are:
+Defined options on output streams are:
 
     \begin{description}
 	\termitem{format}{+Format}
@@ -126,6 +131,12 @@ Same as \exam{gzopen}{File, Mode, Stream, []}.
 
     \predicate{gzopen}{4}{+File, +Mode, -Stream, +Options}
 Open \program{gzip} compatible \arg{File} for reading or writing.
+If a file is opened in =append= mode,  a   new  gzip image will be
+added to the end of the file.   The gzip standard defines that a
+file can hold multiple  gzip  images   and  inflating  the  file
+results in a concatenated stream of all inflated images.
+Options are passed to open/4  and   zopen/3.  Default  format is
+\const{gzip}.
 \end{description}
 
 \section{Interaction with Prolog stream predicates}
