@@ -38,6 +38,7 @@ communication.
 \newpage
 
 \section{Zlib and compression}
+\label{sec:zlib}
 
 Zlib is a widespread library implementing the RFC1950 (zlib wrapper),
 RFC1951 (deflate stream) and RFC1952 (gzip wrapper) compression
@@ -85,6 +86,7 @@ call.
 
 
 \section{Predicate reference}
+\label{sec:zlib-predicates}
 
 \begin{description}
     \predicate{zopen}{3}{+Stream, -ZStream, +Options}
@@ -140,6 +142,7 @@ Options are passed to open/4  and   zopen/3.  Default  format is
 \end{description}
 
 \section{Interaction with Prolog stream predicates}
+\label{sec:zlib-streams}
 
 Using flush_output/1 on a compressed stream causes a
 \const{Z_SYNC_FLUSH} on the stream.  Using close/1 on a compressed
@@ -149,28 +152,6 @@ written to the stream.  If \const{close_parent} is set (default)
 the underlying stream is closed too.  Otherwise it remains open
 and the user can continue communication in non-compressed format
 or reopen the stream for compression using zopen/3.
-
-
-\section{Installation}
-
-\subsection{Unix systems}
-
-Installation on Unix system uses the commonly found {\em configure},
-{\em make} and {\em make install} sequence. SWI-Prolog should be
-installed before building this package. If SWI-Prolog is not installed
-as \program{pl}, the environment variable \env{PL} must be set to the
-name of the SWI-Prolog executable. Installation is now accomplished
-using:
-
-\begin{code}
-% ./configure
-% make
-% make install
-\end{code}
-
-This installs the foreign libraries in \file{$PLBASE/lib/$PLARCH} and
-the Prolog library files in \file{$PLBASE/library}, where
-\file{$PLBASE} refers to the SWI-Prolog `home-directory'.
 
 \printindex
 
