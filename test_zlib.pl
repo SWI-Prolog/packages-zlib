@@ -59,11 +59,12 @@ test(gzip,
 	close(ZOut),
 	read_file_to_codes(pipe('gunzip < plunit-tmp.gz'), Codes1),
 	Codes == Codes1.
-test(multi_part,  Content == "Part1\nPart2\n") :-
+test(multi_part,  Content == 'Part1\nPart2\n') :-
 	setup_call_cleanup(
 	    gzopen('test_multipart.gz', read, In),
-	    read_stream_to_codes(In, Content),
-	    close(In)).
+	    read_stream_to_codes(In, Codes),
+	    close(In)),
+	atom_codes(Content, Codes).
 
 %	deflate: test read/write of deflate format
 
