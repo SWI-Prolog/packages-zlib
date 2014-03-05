@@ -197,7 +197,7 @@ zread(void *handle, char *buf, size_t size)
       DEBUG(1, Sdprintf("Inflate error: %d\n", rc));
   }
   if ( ctx->zstate.msg )
-    Sdprintf("ERROR: zread(): %s\n", ctx->zstate.msg);
+    Sseterr(ctx->zstream, SIO_FERR, ctx->zstate.msg);
   return -1;
 }
 

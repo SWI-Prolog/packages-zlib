@@ -97,7 +97,10 @@ and compression level. The new \arg{ZStream} inherits its
 \jargon{encoding} from \arg{Stream}. In other words, if \arg{Stream} is
 a text-stream, so is \arg{ZStream}. The original \arg{Stream} is
 switched to binary mode while it is wrapped. The original encoding of
-\arg{Stream} is restored if \arg{ZStream} is closed.
+\arg{Stream} is restored if \arg{ZStream} is closed.  Note that zopen/3
+does not actually process any data and therefore succeeds on
+input streams that do not contain valid data.  Errors may be generated
+by read operations performed on the stream.
 
 Defined options on output streams are:
 
