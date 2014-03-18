@@ -141,6 +141,7 @@ client(Address) :-
 	zopen(ZOut, Out, []),
 	process_client(In, Out),
 	close(Out),
+	debug(server, 'Client: closed Out', []),
 	read(In, X),
 	assertion(X==end_of_file),
 	close(In).
@@ -150,14 +151,16 @@ process_client(In, Out) :-
 	       (   format(Out, '~q.~n', [X]),
 		   flush_output(Out),
 		   read(In, Term),
-		   %put(user_error, .),
+		   debug(server, 'Client: got ~q', [Term]),
 		   (   X == Term
 		   ->  true
 		   ;   format('Wrong reply~n'),
 		       fail
 		   )
 	       )),
-	format(Out, 'quit.~n', []).
+	format(Out, 'quit.~n', []),
+	flush_output(Out),
+	debug(server, 'Client: sent quit', []).
 
 
 		 /*******************************
