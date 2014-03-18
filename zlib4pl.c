@@ -64,6 +64,7 @@ typedef struct z_context
   int		    close_parent;	/* close parent on close */
   int		    initialized;	/* did inflateInit()? */
   int		    multi_part;		/* Multipart gzip file */
+  int		    z_stream_end;	/* Seen Z_STREAM_END */
   zformat	    format;		/* current format */
   z_stream	    zstate;		/* Zlib state */
   gz_header	    zhead;		/* Header */
@@ -108,8 +109,14 @@ zread(void *handle, char *buf, size_t size)
 { z_context *ctx = handle;
   int rc;
 
+  ctx->zstate.next_out  = (Bytef*)buf;
+  ctx->zstate.avail_out = (uInt)size;
+
   if ( ctx->zstate.avail_in == 0 )
-  { if ( !Sfeof(ctx->stream) )
+  { if ( ctx->z_stream_end )
+      goto end_seen;
+
+    if ( !Sfeof(ctx->stream) )
     { ctx->zstate.next_in  = (Bytef*)ctx->stream->bufp;
       ctx->zstate.avail_in = (uInt)(ctx->stream->limitp - ctx->stream->bufp);
       DEBUG(1, Sdprintf("Set avail_in to %d\n", (int)ctx->zstate.avail_in));
@@ -123,8 +130,6 @@ zread(void *handle, char *buf, size_t size)
   }
 
   DEBUG(1, Sdprintf("Processing %d bytes\n", (int)ctx->zstate.avail_in));
-  ctx->zstate.next_out  = (Bytef*)buf;
-  ctx->zstate.avail_out = (uInt)size;
 
   if ( ctx->initialized == FALSE )
   { if ( ctx->format == F_GZIP )
@@ -147,7 +152,7 @@ zread(void *handle, char *buf, size_t size)
 
   switch( rc )
   { case Z_OK:
-    { long n = (long)(size - ctx->zstate.avail_out);
+    { size_t n = (size_t)(size - ctx->zstate.avail_out);
 
       DEBUG(1, Sdprintf("inflate(): Z_OK: %d bytes\n", n));
 
@@ -165,7 +170,12 @@ zread(void *handle, char *buf, size_t size)
       return n;
     }
     case Z_STREAM_END:
-    { long n = (long)(size - ctx->zstate.avail_out);
+    { size_t n;
+
+      ctx->z_stream_end = TRUE;
+
+    end_seen:
+      n = (size_t)(size - ctx->zstate.avail_out);
 
       DEBUG(1, Sdprintf("Z_STREAM_END: %d bytes\n", n));
 
@@ -178,6 +188,7 @@ zread(void *handle, char *buf, size_t size)
 	  return n;
 
 	DEBUG(1, Sdprintf("Multi-part gzip stream; restarting\n"));
+	ctx->z_stream_end = FALSE;
 	ctx->initialized = FALSE;		/* multiple zips */
 	return zread(handle, buf, size);
       }
