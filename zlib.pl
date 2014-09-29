@@ -45,7 +45,7 @@
 		     ]).
 :- predicate_options(gzopen/4, 4,
 		     [ pass_to(zopen/3, 3),
-		       pass_to(open/4, 4)
+		       pass_to(system:open/4, 4)
 		     ]).
 
 /** <module> Zlib wrapper for SWI-Prolog
