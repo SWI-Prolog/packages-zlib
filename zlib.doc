@@ -128,11 +128,11 @@ Generic options are:
 If \const{true} (default), closing the compressed stream also closes
 (and thus invalidates) the wrapped stream. If \const{false}, the wrapped
 stream is \emph{not} closed. This can be used to read/write a compressed
-ndata block as partial input/output on a stream.
+data block as partial input/output on a stream.
     \end{description}
 
     \predicate{gzopen}{3}{+File, +Mode, -Stream}
-Same as \exam{gzopen}{File, Mode, Stream, []}.
+Same as \term{gzopen}{File, Mode, Stream, []}.
 
     \predicate{gzopen}{4}{+File, +Mode, -Stream, +Options}
 Open \program{gzip} compatible \arg{File} for reading or writing.
