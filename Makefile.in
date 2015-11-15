@@ -12,6 +12,7 @@
 PACKAGE=zlib
 DOC=zlib
 include ../Makefile.defs
+CFLAGS+= -I.
 
 LIBPL=		@ZLIB_PLTARGETS@
 TARGETS=	@ZLIB_TARGETS@
