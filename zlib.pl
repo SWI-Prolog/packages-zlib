@@ -89,3 +89,13 @@ gzopen(File, Mode, Stream, Options) :-
 zoption(format(_)).
 zoption(multi_part(_)).
 zoption(level(_)).
+
+%%	http:encoding_filter(+Encoding, +In0, -In) is semidet.
+%
+%	Act as plugin for library(http/http_open) for processing content
+%	with =|Content-encoding: gzip|=
+
+http:encoding_filter(gzip, In0, In) :-
+	zopen(In0, In,
+	      [ close_parent(true)
+	      ]).
