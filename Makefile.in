@@ -1,12 +1,12 @@
 ################################################################
-# Makefile template for SWI-Prolog CLIB package
+# Makefile template SWI-Prolog ZLIB package
 #
 # This template is used by configure to create Makefile.  See
 # the file INSTALL for further installation instructions.
 #
-# License: LGPL
+# License: Simplified BSD
 #
-# Author: Jan Wielemaker (wielemak@science.uva.nl)
+# Author: Jan Wielemaker (J.Wielemaker@vu.nl)
 ################################################################
 
 PACKAGE=zlib
