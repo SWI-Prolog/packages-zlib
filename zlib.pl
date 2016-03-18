@@ -41,6 +41,7 @@
 :- use_module(library(shlib)).
 :- use_module(library(error)).
 :- use_module(library(apply)).
+:- use_module(library(option)).
 
 :- predicate_options(zopen/3, 3,
 		     [ format(oneof([gzip,deflate])),
@@ -88,12 +89,17 @@ gzopen(File, Mode, Stream, Options) :-
 			close_parent(true)
 		      ], ZOptions),
 	open(File, Mode, Stream0, OpenOptions),
-	zopen(Stream0, Stream, ZOptions).
+	zopen(Stream0, Stream, ZOptions),
+	(   option(alias(Alias), ZOptions)
+	->  set_stream(Stream, alias(Alias))
+	;   true
+	).
 
 
 zoption(format(_)).
 zoption(multi_part(_)).
 zoption(level(_)).
+zoption(alias(_)).
 
 %%	http:encoding_filter(+Encoding, +In0, -In) is semidet.
 %
