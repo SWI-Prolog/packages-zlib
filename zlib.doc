@@ -106,10 +106,12 @@ Defined options on output streams are:
 
     \begin{description}
 	\termitem{format}{+Format}
-Either \const{deflate} (default) or \const{gzip}. The \const{deflate}
-envelope is simple and short and is typically used for compressed
-(network) communication.  The \const{gzip} envelope is compatible to
-the \program{gzip} program and intended to read/write compressed files.
+Either \const{deflate} (default), \const{raw_deflate} or \const{gzip}.
+The \const{deflate} envelope is simple and short and is typically used
+for compressed (network) communication. The \const{raw_deflate} does not
+include an envelope and is often used as a step in crypographic
+encodings. The \const{gzip} envelope is compatible to the \program{gzip}
+program and intended to read/write compressed files.
 
 	\termitem{level}{+Level}
 Number between 0 and 9, specifying the compression level, Higher levels

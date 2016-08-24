@@ -51,6 +51,7 @@ static atom_t ATOM_close_parent;	/* close_parent(Bool) */
 static atom_t ATOM_multi_part;		/* multi_part(Bool) */
 static atom_t ATOM_gzip;
 static atom_t ATOM_deflate;
+static atom_t ATOM_raw_deflate;
 static int debuglevel = 0;
 
 #ifdef O_DEBUG
@@ -68,7 +69,8 @@ static int debuglevel = 0;
 typedef enum
 { F_UNKNOWN = 0,
   F_GZIP,				/* gzip output */
-  F_DEFLATE				/* zlib data */
+  F_DEFLATE,				/* zlib data */
+  F_RAW_DEFLATE
 } zformat;
 
 typedef struct z_context
@@ -149,6 +151,8 @@ zread(void *handle, char *buf, size_t size)
     { rc = inflateInit2(&ctx->zstate, MAX_WBITS+16);
     } else if ( ctx->format == F_DEFLATE )
     { rc = inflateInit(&ctx->zstate);
+    } else if ( ctx->format == F_RAW_DEFLATE )
+    { rc = inflateInit2(&ctx->zstate, -MAX_WBITS);
     } else
     { memset(&ctx->zhead, 0, sizeof(ctx->zhead));
       rc = inflateInit2(&ctx->zstate, MAX_WBITS+32);
@@ -406,6 +410,8 @@ pl_zopen(term_t org, term_t new, term_t options)
 	fmt = F_GZIP;
       else if ( a == ATOM_deflate )
 	fmt = F_DEFLATE;
+      else if ( a == ATOM_raw_deflate )
+        fmt = F_RAW_DEFLATE;
       else
 	return PL_domain_error("compression_format", arg);
     } else if ( name == ATOM_level )
@@ -435,6 +441,8 @@ pl_zopen(term_t org, term_t new, term_t options)
 
     if ( fmt == F_GZIP )
     { rc = deflateInit2(&ctx->zstate, level, Z_DEFLATED, MAX_WBITS+16, MAX_MEM_LEVEL, 0);
+    } else if ( fmt == F_RAW_DEFLATE )
+    { rc = deflateInit2(&ctx->zstate, level, Z_DEFLATED, -MAX_WBITS, MAX_MEM_LEVEL, 0);
     } else
     { rc = deflateInit(&ctx->zstate, level);
     }
@@ -487,6 +495,7 @@ install_zlib4pl(void)
   ATOM_close_parent = PL_new_atom("close_parent");
   ATOM_gzip	    = PL_new_atom("gzip");
   ATOM_deflate	    = PL_new_atom("deflate");
+  ATOM_raw_deflate  = PL_new_atom("raw_deflate");
   ATOM_multi_part   = PL_new_atom("multi_part");
 
   PL_register_foreign("zopen",  3, pl_zopen,  0);
