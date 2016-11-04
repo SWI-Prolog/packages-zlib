@@ -324,7 +324,10 @@ zclose(void *handle)
   DEBUG(1, Sdprintf("zclose() ...\n"));
 
   if ( (ctx->stream->flags & SIO_INPUT) )
-  { rc = inflateEnd(&ctx->zstate);
+  { if ( ctx->initialized == TRUE )
+      rc = inflateEnd(&ctx->zstate);
+    else
+      rc = Z_OK;
   } else
   { rc = zwrite4(handle, NULL, 0, Z_FINISH);	/* flush */
     if ( rc == 0 )
