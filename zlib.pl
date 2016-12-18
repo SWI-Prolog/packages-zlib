@@ -34,66 +34,66 @@
 */
 
 :- module(zlib,
-	  [ zopen/3,			% +Stream, -ZStream, +Option
-	    gzopen/3,			% +File, +Mode, -Stream
-	    gzopen/4			% +File, +Mode, -Stream, +Options
-	  ]).
+          [ zopen/3,                    % +Stream, -ZStream, +Option
+            gzopen/3,                   % +File, +Mode, -Stream
+            gzopen/4                    % +File, +Mode, -Stream, +Options
+          ]).
 :- use_module(library(shlib)).
 :- use_module(library(error)).
 :- use_module(library(apply)).
 :- use_module(library(option)).
 
 :- predicate_options(zopen/3, 3,
-		     [ format(oneof([gzip,deflate])),
-		       multi_part(boolean),
-		       close_parent(boolean),
-		       level(between(0,9))
-		     ]).
+                     [ format(oneof([gzip,deflate])),
+                       multi_part(boolean),
+                       close_parent(boolean),
+                       level(between(0,9))
+                     ]).
 :- predicate_options(gzopen/4, 4,
-		     [ pass_to(zopen/3, 3),
-		       pass_to(system:open/4, 4)
-		     ]).
+                     [ pass_to(zopen/3, 3),
+                       pass_to(system:open/4, 4)
+                     ]).
 
 /** <module> Zlib wrapper for SWI-Prolog
 
 Read/write compressed data based on the zlib library.
 
 @author Jan Wielemaker
-@see	http://www.zlib.net/
-@see	http://www.swi-prolog.org/packages/zlib.html
+@see    http://www.zlib.net/
+@see    http://www.swi-prolog.org/packages/zlib.html
 */
 
 :- use_foreign_library(foreign(zlib4pl)).
-:- public zdebug/1.			% Set debug level
+:- public zdebug/1.                     % Set debug level
 
-%%	gzopen(+File, +Mode, -Stream) is det.
-%%	gzopen(+File, +Mode, -Stream, +Options) is det.
+%!  gzopen(+File, +Mode, -Stream) is det.
+%!  gzopen(+File, +Mode, -Stream, +Options) is det.
 %
-%	Open a file compatible with the  gzip   program.  Note that if a
-%	file is opened in =append= mode,  a   second  gzip image will be
-%	added to the end of the file.   The gzip standard defines that a
-%	file can hold multiple  gzip  images   and  inflating  the  file
-%	results in a concatenated stream of all inflated images.
+%   Open a file compatible with the  gzip   program.  Note that if a
+%   file is opened in =append= mode,  a   second  gzip image will be
+%   added to the end of the file.   The gzip standard defines that a
+%   file can hold multiple  gzip  images   and  inflating  the  file
+%   results in a concatenated stream of all inflated images.
 %
-%	Options are passed to open/4  and   zopen/3.  Default  format is
-%	=gzip=.
+%   Options are passed to open/4  and   zopen/3.  Default  format is
+%   =gzip=.
 
 gzopen(File, Mode, Stream) :-
-	gzopen(File, Mode, Stream, []).
+    gzopen(File, Mode, Stream, []).
 
 gzopen(File, Mode, Stream, Options) :-
-	must_be(oneof([read,write,append]), Mode),
-	partition(zoption, Options, ZOptions0, OpenOptions),
-	merge_options(ZOptions0,
-		      [ format(gzip),
-			close_parent(true)
-		      ], ZOptions),
-	open(File, Mode, Stream0, OpenOptions),
-	zopen(Stream0, Stream, ZOptions),
-	(   option(alias(Alias), ZOptions)
-	->  set_stream(Stream, alias(Alias))
-	;   true
-	).
+    must_be(oneof([read,write,append]), Mode),
+    partition(zoption, Options, ZOptions0, OpenOptions),
+    merge_options(ZOptions0,
+                  [ format(gzip),
+                    close_parent(true)
+                  ], ZOptions),
+    open(File, Mode, Stream0, OpenOptions),
+    zopen(Stream0, Stream, ZOptions),
+    (   option(alias(Alias), ZOptions)
+    ->  set_stream(Stream, alias(Alias))
+    ;   true
+    ).
 
 
 zoption(format(_)).
@@ -101,12 +101,12 @@ zoption(multi_part(_)).
 zoption(level(_)).
 zoption(alias(_)).
 
-%%	http:encoding_filter(+Encoding, +In0, -In) is semidet.
+%!  http:encoding_filter(+Encoding, +In0, -In) is semidet.
 %
-%	Act as plugin for library(http/http_open) for processing content
-%	with =|Content-encoding: gzip|=
+%   Act as plugin for library(http/http_open) for processing content
+%   with =|Content-encoding: gzip|=
 
 http:encoding_filter(gzip, In0, In) :-
-	zopen(In0, In,
-	      [ close_parent(true)
-	      ]).
+    zopen(In0, In,
+          [ close_parent(true)
+          ]).
