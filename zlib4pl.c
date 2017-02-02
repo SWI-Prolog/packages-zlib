@@ -123,6 +123,7 @@ static ssize_t				/* inflate */
 zread(void *handle, char *buf, size_t size)
 { z_context *ctx = handle;
   int rc;
+  const char *msg = NULL;
 
   ctx->zstate.next_out  = (Bytef*)buf;
   ctx->zstate.avail_out = (uInt)size;
@@ -214,24 +215,31 @@ zread(void *handle, char *buf, size_t size)
     }
     case Z_NEED_DICT:
       DEBUG(1, Sdprintf("Z_NEED_DICT\n"));
+      msg = "zlib: need dictionary";
       break;
     case Z_DATA_ERROR:
       DEBUG(1, Sdprintf("Z_DATA_ERROR\n"));
+      msg = "zlib: corrupt input data";
       break;
     case Z_STREAM_ERROR:
       DEBUG(1, Sdprintf("Z_STREAM_ERROR\n"));
+      msg = "zlib: inconsistent state";
       break;
     case Z_MEM_ERROR:
       DEBUG(1, Sdprintf("Z_MEM_ERROR\n"));
+      msg = "zlib: not enough memory";
       break;
     case Z_BUF_ERROR:
       DEBUG(1, Sdprintf("Z_BUF_ERROR\n"));
+      msg = "zlib: unexpected end-of-file";
       break;
     default:
       DEBUG(1, Sdprintf("Inflate error: %d\n", rc));
   }
   if ( ctx->zstate.msg )
-    Sseterr(ctx->zstream, SIO_FERR, ctx->zstate.msg);
+    msg = ctx->zstate.msg;
+  if ( msg )
+    Sseterr(ctx->zstream, SIO_FERR, msg);
   return -1;
 }
 
