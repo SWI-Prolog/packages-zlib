@@ -90,6 +90,7 @@ gzopen(File, Mode, Stream, Options) :-
                   ], ZOptions),
     open(File, Mode, Stream0, OpenOptions),
     zopen(Stream0, Stream, ZOptions),
+    set_stream(Stream, file_name(File)),
     (   option(alias(Alias), ZOptions)
     ->  set_stream(Stream, alias(Alias))
     ;   true
