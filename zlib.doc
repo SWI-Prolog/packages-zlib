@@ -23,7 +23,7 @@
 
 \begin{abstract}
 The library \pllib{zlib} provides a binding to the
-\url[zlib]{http://www.zlib.net/} general purpose compression library.
+\href{http://www.zlib.net/}{zlib} general purpose compression library.
 The prolog library aims as seamlessly reading and writing files
 compatible to the \program{gzip} program as well as compressed (network)
 communication.
