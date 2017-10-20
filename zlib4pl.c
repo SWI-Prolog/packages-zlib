@@ -115,7 +115,14 @@ free_zcontext(z_context *ctx)
 
 static void
 sync_stream(z_context *ctx)
-{ ctx->stream->bufp   = (char*)ctx->zstate.next_in;
+{ IOPOS *pos;
+
+  if ( (pos = ctx->stream->position) )
+  { size_t bytes = (char*)ctx->zstate.next_in - ctx->stream->bufp;
+    pos->byteno += bytes;
+  }
+
+  ctx->stream->bufp = (char*)ctx->zstate.next_in;
 }
 
 
