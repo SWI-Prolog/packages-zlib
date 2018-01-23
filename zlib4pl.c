@@ -324,9 +324,15 @@ zcontrol(void *handle, int op, void *data)
     case SIO_SETENCODING:
       return 0;				/* allow switching encoding */
     default:
-      if ( ctx->stream->functions->control )
-	return (*ctx->stream->functions->control)(ctx->stream->handle, op, data);
+    { IOSTREAM *parent = ctx->stream;
+      if ( parent->magic == SIO_MAGIC )
+      { Scontrol_function ctrl;
+
+	if ( (ctrl=parent->functions->control) )
+	  return (*ctrl)(parent->handle, op, data);
+      }
       return -1;
+    }
   }
 }
 
