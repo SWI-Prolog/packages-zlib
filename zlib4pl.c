@@ -215,6 +215,7 @@ zread(void *handle, char *buf, size_t size)
 	DEBUG(1, Sdprintf("Multi-part gzip stream; restarting\n"));
 	ctx->z_stream_end = FALSE;
 	ctx->initialized = FALSE;		/* multiple zips */
+	inflateEnd(&ctx->zstate);
 	return zread(handle, buf, size);
       }
 
