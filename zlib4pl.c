@@ -34,7 +34,7 @@
 */
 
 #define O_DEBUG 1
-#include <config.h>
+#define PL_ARITY_AS_SIZE
 #include <SWI-Stream.h>
 #include <SWI-Prolog.h>
 #include <stdlib.h>
