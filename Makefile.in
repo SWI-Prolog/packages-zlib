@@ -74,6 +74,5 @@ clean:
 distclean:	clean
 		rm -f $(TARGETS) config.cache config.h config.status Makefile
 		rm -f $(DOC).aux $(DOC).log $(DOC).out $(DOC).toc
-		rm -f test_multipart.gz
 		rm -rf html
 		rm -rf autom4te.cache
