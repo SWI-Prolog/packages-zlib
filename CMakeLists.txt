@@ -16,4 +16,6 @@ test_libs(
     zlib
     PACKAGES clib plunit)
 
+pkg_doc(zlib)
+
 endif(ZLIB_FOUND)
