@@ -11,6 +11,9 @@ swipl_plugin(
     C_SOURCES zlib4pl.c
     C_LIBS ${ZLIB_LIBRARIES}
     PL_LIBS zlib.pl)
+target_include_directories(
+    plugin_zlib4pl BEFORE PRIVATE
+    ${ZLIB_INCLUDE_DIR})
 
 test_libs(
     zlib
