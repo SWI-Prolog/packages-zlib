@@ -60,12 +60,8 @@ uninstall::
 # Testing
 ################################################################
 
-check:		test_multipart.gz
+check::
 		$(PL) -q -f test_zlib.pl -g test_zlib -t halt
-
-test_multipart.gz:
-		echo "Part1" | gzip > $@
-		echo "Part2" | gzip >> $@
 
 
 ################################################################
@@ -78,6 +74,5 @@ clean:
 distclean:	clean
 		rm -f $(TARGETS) config.cache config.h config.status Makefile
 		rm -f $(DOC).aux $(DOC).log $(DOC).out $(DOC).toc
-		rm -f test_multipart.gz
 		rm -rf html
 		rm -rf autom4te.cache
