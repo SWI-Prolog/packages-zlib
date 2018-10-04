@@ -17,26 +17,39 @@ test_zlib :-
     run_tests([ zlib
               ]).
 
+test_input(Name, Path) :-
+    source_file(test_zlib, MyFile),
+    file_directory_name(MyFile, MyDir),
+    atomic_list_concat([MyDir, Name], /, Path).
+
+create_plunit_tmp :-
+    test_input('test_zlib.pl', File),
+    format(string(Command),
+           "gzip < \"~w\" > plunit-tmp.gz", [File]),
+    shell(Command).
+
 :- begin_tests(zlib).
 
 %       gunzip: can we read a file compressed with gzip
 
 test(gunzip,
-     [ setup(shell('gzip < test_zlib.pl > plunit-tmp.gz')),
+     [ setup(create_plunit_tmp),
        cleanup(delete_file('plunit-tmp.gz'))
      ]) :-
     gzopen('plunit-tmp.gz', read, ZIn),
     call_cleanup(read_stream_to_codes(ZIn, Codes0), close(ZIn)),
-    read_file_to_codes('test_zlib.pl', Codes1),
+    test_input('test_zlib.pl', File),
+    read_file_to_codes(File, Codes1),
     Codes0 == Codes1.
 
 test(gunzip_eof,
-     [ setup(shell('gzip < test_zlib.pl > plunit-tmp.gz')),
+     [ setup(create_plunit_tmp),
        cleanup(delete_file('plunit-tmp.gz'))
      ]) :-
     gzopen('plunit-tmp.gz', read, ZIn),
     call_cleanup(eof_read_codes(ZIn, Codes0), close(ZIn)),
-    read_file_to_codes('test_zlib.pl', Codes1),
+    test_input('test_zlib.pl', File),
+    read_file_to_codes(File, Codes1),
     Codes0 == Codes1.
 
 eof_read_codes(In, List) :-
@@ -53,15 +66,17 @@ eof_read_codes(In, List) :-
 test(gzip,
      [ cleanup(delete_file('plunit-tmp.gz'))
      ]) :-
-    read_file_to_codes('test_zlib.pl', Codes),
+    test_input('test_zlib.pl', File),
+    read_file_to_codes(File, Codes),
     gzopen('plunit-tmp.gz', write, ZOut),
     format(ZOut, '~s', [Codes]),
     close(ZOut),
     read_file_to_codes(pipe('gunzip < plunit-tmp.gz'), Codes1),
     Codes == Codes1.
 test(multi_part,  Content == 'Part1\nPart2\n') :-
+    test_input('test_multipart.gz', MultiPart),
     setup_call_cleanup(
-        gzopen('test_multipart.gz', read, In),
+        gzopen(MultiPart, read, In),
         read_stream_to_codes(In, Codes),
         close(In)),
     atom_codes(Content, Codes).
@@ -71,7 +86,8 @@ test(multi_part,  Content == 'Part1\nPart2\n') :-
 test(deflate,
      [ cleanup(delete_file('plunit-tmp.z'))
      ]) :-
-    read_file_to_codes('test_zlib.pl', Codes),
+    test_input('test_zlib.pl', Path),
+    read_file_to_codes(Path, Codes),
     open('plunit-tmp.z', write, Out),
     zopen(Out, ZOut, []),
     format(ZOut, '~s', [Codes]),
