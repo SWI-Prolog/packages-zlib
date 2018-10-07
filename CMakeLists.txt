@@ -7,7 +7,8 @@ find_package(ZLIB)
 if(ZLIB_FOUND)
 
 swipl_plugin(
-    zlib4pl
+    zlib
+    MODULE zlib4pl
     C_SOURCES zlib4pl.c
     C_LIBS ${ZLIB_LIBRARIES}
     PL_LIBS zlib.pl)
