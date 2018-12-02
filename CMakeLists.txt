@@ -18,7 +18,8 @@ target_include_directories(
 
 test_libs(
     zlib
-    PACKAGES clib plunit)
+    PACKAGES clib plunit
+    TEST_FILES test_multipart.gz)
 
 pkg_doc(zlib)
 
