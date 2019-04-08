@@ -110,7 +110,7 @@ test(gzip_utf8,
     gzopen('plunit-tmp.gz', write, ZOut, [type(text), encoding(utf8)]),
     format(ZOut, '~s', [ReferenceCodes]),
     close(ZOut),
-    gzopen('plunit-tmp.gz', read, ZIn, [type(text)]),
+    gzopen('plunit-tmp.gz', read, ZIn, [type(text), encoding(utf8)]),
     call_cleanup(read_stream_to_codes(ZIn, Codes), close(ZIn)),
     Codes = ReferenceCodes.
 
