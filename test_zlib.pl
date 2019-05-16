@@ -29,6 +29,7 @@ reference_file(Name, Path) :-
 test(gunzip_ascii) :-
     reference_file('ascii-file.gz', ReferenceFile),
     gzopen(ReferenceFile, read, ZIn, [type(text), encoding(ascii)]),
+    set_stream(ZIn, newline(posix)),
     call_cleanup(read_stream_to_codes(ZIn, Codes), close(ZIn)),
     numlist(0, 127, ReferenceCodes),
     Codes == ReferenceCodes.
@@ -36,6 +37,7 @@ test(gunzip_ascii) :-
 test(gunzip_utf8) :-
     reference_file('utf8-file.gz', ReferenceFile),
     gzopen(ReferenceFile, read, ZIn, [type(text), encoding(utf8)]),
+    set_stream(ZIn, newline(posix)),
     call_cleanup(read_stream_to_codes(ZIn, Codes), close(ZIn)),
     numlist(0, 2047, ReferenceCodes),
     Codes == ReferenceCodes.
@@ -56,6 +58,7 @@ test(gunzip_empty) :-
 test(gunzip_low_compression) :-
     reference_file('low-compression.gz', ReferenceFile),
     gzopen(ReferenceFile, read, ZIn),
+    set_stream(ZIn, newline(posix)),
     call_cleanup(read_stream_to_codes(ZIn, Codes), close(ZIn)),
     numlist(0, 127, ReferenceCodes),
     Codes == ReferenceCodes.
@@ -63,6 +66,7 @@ test(gunzip_low_compression) :-
 test(gunzip_high_compression) :-
     reference_file('high-compression.gz', ReferenceFile),
     gzopen(ReferenceFile, read, ZIn),
+    set_stream(ZIn, newline(posix)),
     call_cleanup(read_stream_to_codes(ZIn, Codes), close(ZIn)),
     numlist(0, 127, ReferenceCodes),
     Codes == ReferenceCodes.
@@ -76,6 +80,7 @@ test(gunzip_multipart) :-
 test(gunzip_eof) :-
     reference_file('ascii-file.gz', ReferenceFile),
     gzopen(ReferenceFile, read, ZIn),
+    set_stream(ZIn, newline(posix)),
     call_cleanup(eof_read_codes(ZIn, Codes), close(ZIn)),
     numlist(0, 127, ReferenceCodes),
     Codes == ReferenceCodes.
@@ -97,9 +102,11 @@ test(gzip_ascii,
      ]) :-
     numlist(0, 127, ReferenceCodes),
     gzopen('plunit-tmp.gz', write, ZOut, [type(text), encoding(ascii)]),
+    set_stream(ZOut, newline(posix)),
     format(ZOut, '~s', [ReferenceCodes]),
     close(ZOut),
     gzopen('plunit-tmp.gz', read, ZIn, [type(text)]),
+    set_stream(ZIn, newline(posix)),
     call_cleanup(read_stream_to_codes(ZIn, Codes), close(ZIn)),
     Codes = ReferenceCodes.
 
@@ -108,9 +115,11 @@ test(gzip_utf8,
      ]) :-
     numlist(0, 2047, ReferenceCodes),
     gzopen('plunit-tmp.gz', write, ZOut, [type(text), encoding(utf8)]),
+    set_stream(ZOut, newline(posix)),
     format(ZOut, '~s', [ReferenceCodes]),
     close(ZOut),
     gzopen('plunit-tmp.gz', read, ZIn, [type(text), encoding(utf8)]),
+    set_stream(ZIn, newline(posix)),
     call_cleanup(read_stream_to_codes(ZIn, Codes), close(ZIn)),
     Codes = ReferenceCodes.
 
@@ -119,9 +128,11 @@ test(gzip_binary,
      ]) :-
     numlist(0, 255, ReferenceCodes),
     gzopen('plunit-tmp.gz', write, ZOut, [type(binary)]),
+    set_stream(ZOut, newline(posix)),
     format(ZOut, '~s', [ReferenceCodes]),
     close(ZOut),
     gzopen('plunit-tmp.gz', read, ZIn, [type(binary)]),
+    set_stream(ZIn, newline(posix)),
     call_cleanup(read_stream_to_codes(ZIn, Codes), close(ZIn)),
     Codes = ReferenceCodes.
 
@@ -157,10 +168,12 @@ test(deflate_ascii,
     numlist(0, 127, ReferenceCodes),
     open('plunit-tmp.z', write, Out, [type(text), encoding(ascii)]),
     zopen(Out, ZOut, []),
+    set_stream(ZOut, newline(posix)),
     format(ZOut, '~s', [ReferenceCodes]),
     close(ZOut),
     open('plunit-tmp.z', read, In, [type(text), encoding(ascii)]),
     zopen(In, ZIn, []),
+    set_stream(ZIn, newline(posix)),
     read_stream_to_codes(ZIn, Codes),
     close(ZIn),
     Codes == ReferenceCodes.
@@ -171,10 +184,12 @@ test(deflate_utf8,
     numlist(0, 2047, ReferenceCodes),
     open('plunit-tmp.z', write, Out, [type(text), encoding(utf8)]),
     zopen(Out, ZOut, []),
+    set_stream(ZOut, newline(posix)),
     format(ZOut, '~s', [ReferenceCodes]),
     close(ZOut),
     open('plunit-tmp.z', read, In, [type(text), encoding(utf8)]),
     zopen(In, ZIn, []),
+    set_stream(ZIn, newline(posix)),
     read_stream_to_codes(ZIn, Codes),
     close(ZIn),
     Codes == ReferenceCodes.
@@ -209,10 +224,12 @@ test(deflate_low_compression) :-
     numlist(0, 127, ReferenceCodes),
     open('plunit-tmp.z', write, Out),
     zopen(Out, ZOut, [level(0)]),
+    set_stream(ZOut, newline(posix)),
     format(ZOut, '~s', [ReferenceCodes]),
     close(ZOut),
     open('plunit-tmp.z', read, In),
     zopen(In, ZIn, []),
+    set_stream(ZIn, newline(posix)),
     read_stream_to_codes(ZIn, Codes),
     close(ZIn),
     Codes == ReferenceCodes.
@@ -221,10 +238,12 @@ test(deflate_high_compression) :-
     numlist(0, 127, ReferenceCodes),
     open('plunit-tmp.z', write, Out),
     zopen(Out, ZOut, [level(9)]),
+    set_stream(ZOut, newline(posix)),
     format(ZOut, '~s', [ReferenceCodes]),
     close(ZOut),
     open('plunit-tmp.z', read, In),
     zopen(In, ZIn, []),
+    set_stream(ZIn, newline(posix)),
     read_stream_to_codes(ZIn, Codes),
     close(ZIn),
     Codes == ReferenceCodes.
