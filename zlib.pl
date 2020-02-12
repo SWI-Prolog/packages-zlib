@@ -38,10 +38,9 @@
             gzopen/3,                   % +File, +Mode, -Stream
             gzopen/4                    % +File, +Mode, -Stream, +Options
           ]).
-:- use_module(library(shlib)).
-:- use_module(library(error)).
-:- use_module(library(apply)).
-:- use_module(library(option)).
+:- autoload(library(apply),[partition/4]).
+:- autoload(library(error),[must_be/2]).
+:- autoload(library(option),[merge_options/3,option/2]).
 
 :- predicate_options(zopen/3, 3,
                      [ format(oneof([gzip,deflate])),
