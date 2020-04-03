@@ -94,67 +94,80 @@ eof_read_codes(In, List) :-
     ).
 
 
-
 %       gzip: can we write (and read back) a compressed file
 
+:- multifile user:file_search_path/1.
+user:file_search_path(test_tmp_dir, '.').
+
+tmp_output(Base, File) :-
+    absolute_file_name(test_tmp_dir(Base),
+                       File,
+                       [ access(write)
+                       ]).
+
 test(gzip_ascii,
-     [ cleanup(delete_file('plunit-tmp.gz'))
+     [ setup(tmp_output('plunit-tmp.gz', Tmp)),
+       cleanup(delete_file(Tmp))
      ]) :-
     numlist(0, 127, ReferenceCodes),
-    gzopen('plunit-tmp.gz', write, ZOut, [type(text), encoding(ascii)]),
+    gzopen(Tmp, write, ZOut, [type(text), encoding(ascii)]),
     set_stream(ZOut, newline(posix)),
     format(ZOut, '~s', [ReferenceCodes]),
     close(ZOut),
-    gzopen('plunit-tmp.gz', read, ZIn, [type(text)]),
+    gzopen(Tmp, read, ZIn, [type(text)]),
     set_stream(ZIn, newline(posix)),
     call_cleanup(read_stream_to_codes(ZIn, Codes), close(ZIn)),
     Codes = ReferenceCodes.
 
 test(gzip_utf8,
-     [ cleanup(delete_file('plunit-tmp.gz'))
+     [ setup(tmp_output('plunit-tmp.gz', Tmp)),
+       cleanup(delete_file(Tmp))
      ]) :-
     numlist(0, 2047, ReferenceCodes),
-    gzopen('plunit-tmp.gz', write, ZOut, [type(text), encoding(utf8)]),
+    gzopen(Tmp, write, ZOut, [type(text), encoding(utf8)]),
     set_stream(ZOut, newline(posix)),
     format(ZOut, '~s', [ReferenceCodes]),
     close(ZOut),
-    gzopen('plunit-tmp.gz', read, ZIn, [type(text), encoding(utf8)]),
+    gzopen(Tmp, read, ZIn, [type(text), encoding(utf8)]),
     set_stream(ZIn, newline(posix)),
     call_cleanup(read_stream_to_codes(ZIn, Codes), close(ZIn)),
     Codes = ReferenceCodes.
 
 test(gzip_binary,
-     [ cleanup(delete_file('plunit-tmp.gz'))
+     [ setup(tmp_output('plunit-tmp.gz', Tmp)),
+       cleanup(delete_file(Tmp))
      ]) :-
     numlist(0, 255, ReferenceCodes),
-    gzopen('plunit-tmp.gz', write, ZOut, [type(binary)]),
+    gzopen(Tmp, write, ZOut, [type(binary)]),
     set_stream(ZOut, newline(posix)),
     format(ZOut, '~s', [ReferenceCodes]),
     close(ZOut),
-    gzopen('plunit-tmp.gz', read, ZIn, [type(binary)]),
+    gzopen(Tmp, read, ZIn, [type(binary)]),
     set_stream(ZIn, newline(posix)),
     call_cleanup(read_stream_to_codes(ZIn, Codes), close(ZIn)),
     Codes = ReferenceCodes.
 
 test(gzip_empty,
-     [ cleanup(delete_file('plunit-tmp.gz'))
+     [ setup(tmp_output('plunit-tmp.gz', Tmp)),
+       cleanup(delete_file(Tmp))
      ]) :-
-    gzopen('plunit-tmp.gz', write, ZOut),
+    gzopen(Tmp, write, ZOut),
     close(ZOut),
-    gzopen('plunit-tmp.gz', read, ZIn, [type(text)]),
+    gzopen(Tmp, read, ZIn, [type(text)]),
     call_cleanup(read_stream_to_codes(ZIn, Codes1), close(ZIn)),
     Codes1 = [].
 
 test(gzip_multipart,
-     [ cleanup(delete_file('plunit-tmp.gz'))
+     [ setup(tmp_output('plunit-tmp.gz', Tmp)),
+       cleanup(delete_file(Tmp))
      ]) :-
-    gzopen('plunit-tmp.gz', write, ZOut1),
+    gzopen(Tmp, write, ZOut1),
     format(ZOut1, 'Part1\n', []),
     close(ZOut1),
-    gzopen('plunit-tmp.gz', append, ZOut2),
+    gzopen(Tmp, append, ZOut2),
     format(ZOut2, 'Part2\n', []),
     close(ZOut2),
-    gzopen('plunit-tmp.gz', read, ZIn),
+    gzopen(Tmp, read, ZIn),
     call_cleanup(read_stream_to_codes(ZIn, Codes), close(ZIn)),
     atom_codes('Part1\nPart2\n', Codes).
 
@@ -163,15 +176,16 @@ test(gzip_multipart,
 %       deflate: test read/write of deflate format
 
 test(deflate_ascii,
-     [ cleanup(delete_file('plunit-tmp.z'))
+     [ setup(tmp_output('plunit-tmp.z', Tmp)),
+       cleanup(delete_file(Tmp))
      ]) :-
     numlist(0, 127, ReferenceCodes),
-    open('plunit-tmp.z', write, Out, [type(text), encoding(ascii)]),
+    open(Tmp, write, Out, [type(text), encoding(ascii)]),
     zopen(Out, ZOut, []),
     set_stream(ZOut, newline(posix)),
     format(ZOut, '~s', [ReferenceCodes]),
     close(ZOut),
-    open('plunit-tmp.z', read, In, [type(text), encoding(ascii)]),
+    open(Tmp, read, In, [type(text), encoding(ascii)]),
     zopen(In, ZIn, []),
     set_stream(ZIn, newline(posix)),
     read_stream_to_codes(ZIn, Codes),
@@ -179,15 +193,16 @@ test(deflate_ascii,
     Codes == ReferenceCodes.
 
 test(deflate_utf8,
-     [ cleanup(delete_file('plunit-tmp.z'))
+     [ setup(tmp_output('plunit-tmp.z', Tmp)),
+       cleanup(delete_file(Tmp))
      ]) :-
     numlist(0, 2047, ReferenceCodes),
-    open('plunit-tmp.z', write, Out, [type(text), encoding(utf8)]),
+    open(Tmp, write, Out, [type(text), encoding(utf8)]),
     zopen(Out, ZOut, []),
     set_stream(ZOut, newline(posix)),
     format(ZOut, '~s', [ReferenceCodes]),
     close(ZOut),
-    open('plunit-tmp.z', read, In, [type(text), encoding(utf8)]),
+    open(Tmp, read, In, [type(text), encoding(utf8)]),
     zopen(In, ZIn, []),
     set_stream(ZIn, newline(posix)),
     read_stream_to_codes(ZIn, Codes),
@@ -195,53 +210,61 @@ test(deflate_utf8,
     Codes == ReferenceCodes.
 
 test(deflate_binary,
-     [ cleanup(delete_file('plunit-tmp.z'))
+     [ setup(tmp_output('plunit-tmp.z', Tmp)),
+       cleanup(delete_file(Tmp))
      ]) :-
     numlist(0, 255, ReferenceCodes),
-    open('plunit-tmp.z', write, Out, [type(binary)]),
+    open(Tmp, write, Out, [type(binary)]),
     zopen(Out, ZOut, []),
     format(ZOut, '~s', [ReferenceCodes]),
     close(ZOut),
-    open('plunit-tmp.z', read, In, [type(binary)]),
+    open(Tmp, read, In, [type(binary)]),
     zopen(In, ZIn, []),
     read_stream_to_codes(ZIn, Codes),
     close(ZIn),
     Codes == ReferenceCodes.
 
 test(deflate_empty,
-     [ cleanup(delete_file('plunit-tmp.z'))
+     [ setup(tmp_output('plunit-tmp.z', Tmp)),
+       cleanup(delete_file(Tmp))
      ]) :-
-    open('plunit-tmp.z', write, Out),
+    open(Tmp, write, Out),
     zopen(Out, ZOut, []),
     close(ZOut),
-    open('plunit-tmp.z', read, In),
+    open(Tmp, read, In),
     zopen(In, ZIn, []),
     read_stream_to_codes(ZIn, Codes),
     close(ZIn),
     Codes == [].
 
-test(deflate_low_compression) :-
+test(deflate_low_compression,
+     [ setup(tmp_output('plunit-tmp.z', Tmp)),
+       cleanup(delete_file(Tmp))
+     ]) :-
     numlist(0, 127, ReferenceCodes),
-    open('plunit-tmp.z', write, Out),
+    open(Tmp, write, Out),
     zopen(Out, ZOut, [level(0)]),
     set_stream(ZOut, newline(posix)),
     format(ZOut, '~s', [ReferenceCodes]),
     close(ZOut),
-    open('plunit-tmp.z', read, In),
+    open(Tmp, read, In),
     zopen(In, ZIn, []),
     set_stream(ZIn, newline(posix)),
     read_stream_to_codes(ZIn, Codes),
     close(ZIn),
     Codes == ReferenceCodes.
 
-test(deflate_high_compression) :-
+test(deflate_high_compression,
+     [ setup(tmp_output('plunit-tmp.z', Tmp)),
+       cleanup(delete_file(Tmp))
+     ]) :-
     numlist(0, 127, ReferenceCodes),
-    open('plunit-tmp.z', write, Out),
+    open(Tmp, write, Out),
     zopen(Out, ZOut, [level(9)]),
     set_stream(ZOut, newline(posix)),
     format(ZOut, '~s', [ReferenceCodes]),
     close(ZOut),
-    open('plunit-tmp.z', read, In),
+    open(Tmp, read, In),
     zopen(In, ZIn, []),
     set_stream(ZIn, newline(posix)),
     read_stream_to_codes(ZIn, Codes),
@@ -249,16 +272,17 @@ test(deflate_high_compression) :-
     Codes == ReferenceCodes.
 
 test(deflate_multipart,
-     [ cleanup(delete_file('plunit-tmp.z'))
+     [ setup(tmp_output('plunit-tmp.z', Tmp)),
+       cleanup(delete_file(Tmp))
      ]) :-
-    open('plunit-tmp.z', write, Out),
+    open(Tmp, write, Out),
     zopen(Out, ZOut1, [close_parent(false)]),
     format(ZOut1, 'Part1\n', []),
     close(ZOut1),
     zopen(Out, ZOut2, []),
     format(ZOut2, 'Part2\n', []),
     close(ZOut2),
-    open('plunit-tmp.z', read, In),
+    open(Tmp, read, In),
     zopen(In, ZIn, [multi_part(true)]),
     read_stream_to_codes(ZIn, Codes),
     close(ZIn),
