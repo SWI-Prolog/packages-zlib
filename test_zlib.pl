@@ -10,11 +10,14 @@
 :- use_module(library(zlib)).
 :- use_module(library(plunit)).
 :- use_module(library(readutil)).
-:- use_module(library(socket)).
 :- use_module(library(debug)).
+:- if(exists_source(library(socket))).
+:- use_module(library(socket)).
+:- endif.
 
 test_zlib :-
-    run_tests([ zlib
+    run_tests([ zlib,
+                zlib_sockets
               ]).
 
 reference_file(Name, Path) :-
@@ -288,7 +291,9 @@ test(deflate_multipart,
     close(ZIn),
     atom_codes('Part1\nPart2\n', Codes).
 
+:- end_tests(zlib).
 
+:- begin_tests(zlib_sockets, [condition(current_predicate(tcp_socket/1))]).
 
 %       zstream: test compressed stream flushing and processing
 
@@ -429,4 +434,4 @@ get_data(ZIn, N) :-
         fail
     ).
 
-:- end_tests(zlib).
+:- end_tests(zlib_sockets).
