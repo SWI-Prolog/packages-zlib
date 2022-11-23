@@ -1,6 +1,6 @@
 :- module(test_zlib,
-          [ test_zlib/0
-          ]).
+	  [ test_zlib/0
+	  ]).
 :- asserta(user:file_search_path(foreign, '.')).
 :- asserta(user:file_search_path(foreign, '../clib')).
 :- asserta(user:file_search_path(library, '.')).
@@ -17,8 +17,8 @@
 
 test_zlib :-
     run_tests([ zlib,
-                zlib_sockets
-              ]).
+		zlib_sockets
+	      ]).
 
 reference_file(Name, Path) :-
     source_file(test_zlib, MyFile),
@@ -92,8 +92,8 @@ eof_read_codes(In, List) :-
     (   at_end_of_stream(In)
     ->  List = []
     ;   get_code(In, C),
-        List = [C|Rest],
-        eof_read_codes(In, Rest)
+	List = [C|Rest],
+	eof_read_codes(In, Rest)
     ).
 
 
@@ -104,9 +104,9 @@ user:file_search_path(test_tmp_dir, '.').
 
 tmp_output(Base, File) :-
     absolute_file_name(test_tmp_dir(Base),
-                       File,
-                       [ access(write)
-                       ]).
+		       File,
+		       [ access(write)
+		       ]).
 
 test(gzip_ascii,
      [ setup(tmp_output('plunit-tmp.gz', Tmp)),
@@ -293,7 +293,10 @@ test(deflate_multipart,
 
 :- end_tests(zlib).
 
-:- begin_tests(zlib_sockets, [condition(current_predicate(tcp_socket/1))]).
+:- begin_tests(zlib_sockets,
+	       [ condition(( current_predicate(tcp_socket/1),
+			     current_prolog_flag(threads, true)))
+	       ]).
 
 %       zstream: test compressed stream flushing and processing
 
@@ -326,9 +329,9 @@ loop(In, Out) :-
     (   Term == quit
     ->  true
     ;   format(Out, '~q.~n', [Term]),
-        flush_output(Out),
-        debug(server, 'Replied', [Term]),
-        loop(In, Out)
+	flush_output(Out),
+	debug(server, 'Replied', [Term]),
+	loop(In, Out)
     ).
 
 client(Port) :-
@@ -350,29 +353,29 @@ client(Address) :-
 
 process_client(In, Out) :-
     forall(between(0, 50, X),
-           (   format(Out, '~q.~n', [X]),
-               flush_output(Out),
-               read(In, Term),
-               debug(server, 'Client: got ~q', [Term]),
-               (   X == Term
-               ->  true
-               ;   format('Wrong reply~n'),
-                   fail
-               )
-           )),
+	   (   format(Out, '~q.~n', [X]),
+	       flush_output(Out),
+	       read(In, Term),
+	       debug(server, 'Client: got ~q', [Term]),
+	       (   X == Term
+	       ->  true
+	       ;   format('Wrong reply~n'),
+		   fail
+	       )
+	   )),
     format(Out, 'quit.~n', []),
     flush_output(Out),
     debug(server, 'Client: sent quit', []).
 
 
-                 /*******************************
-                 *            BIG DATA          *
-                 *******************************/
+		 /*******************************
+		 *            BIG DATA          *
+		 *******************************/
 
 test(big) :-
     forall(between(1, 5, I),
-           (   Max is 10**I,
-               big(_, Max))).
+	   (   Max is 10**I,
+	       big(_, Max))).
 
 big(Port, N):-
     tcp_socket(SockFd),
@@ -389,7 +392,7 @@ big(Port, N):-
     close(ZOut),
     character_count(OutStream, CompressedCnt),
     debug(zlib, 'compressed ~d into ~d bytes~n',
-          [RawCnt, CompressedCnt]),
+	  [RawCnt, CompressedCnt]),
     close(OutStream),
     tcp_close_socket(SockFd),
     thread_join(Client, Status),
@@ -420,18 +423,18 @@ get_data(ZIn, _) :-
     get_byte(ZIn, C),
     (   C == -1
     ->  !,
-        format('EOF at ~w~n', [X])
+	format('EOF at ~w~n', [X])
     ;   put_byte(C),
-        fail
+	fail
     ).
 get_data(ZIn, N) :-
     between(1, inf, X),
     read(ZIn, Term),
     (   Term == end_of_file
     ->  !,
-        assertion(X =:= N + 1)
+	assertion(X =:= N + 1)
     ;   assertion(Term == X),
-        fail
+	fail
     ).
 
 :- end_tests(zlib_sockets).
