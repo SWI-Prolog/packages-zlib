@@ -178,7 +178,7 @@ zread(void *handle, char *buf, size_t size)
   { case Z_OK:
     { size_t n = (size_t)(size - ctx->zstate.avail_out);
 
-      DEBUG(1, Sdprintf("inflate(): Z_OK: %d bytes\n", n));
+      DEBUG(1, Sdprintf("inflate(): Z_OK: %zd bytes\n", n));
 
       if ( n == 0 )
       { /* If we get here then there was not enough data in the in buffer
@@ -201,7 +201,7 @@ zread(void *handle, char *buf, size_t size)
     end_seen:
       n = (size_t)(size - ctx->zstate.avail_out);
 
-      DEBUG(1, Sdprintf("Z_STREAM_END: %d bytes\n", n));
+      DEBUG(1, Sdprintf("Z_STREAM_END: %zd bytes\n", n));
 
       if ( n == 0 && ctx->multi_part )
       { if ( ctx->multi_part == -1 &&
@@ -272,7 +272,7 @@ zwrite4(void *handle, char *buf, size_t size, int flush)
       case Z_STREAM_END:
       { size_t n = sizeof(buffer) - ctx->zstate.avail_out;
 
-	DEBUG(1, Sdprintf("[%d] Compressed (%s) to %d bytes; left %d\n",
+	DEBUG(1, Sdprintf("[%d] Compressed (%s) to %zd bytes; left %d\n",
 			  loops, rc == Z_OK ? "Z_OK" : "Z_STREAM_END",
 			  n, ctx->zstate.avail_in));
 	if ( n > 0 )
