@@ -43,7 +43,7 @@
 :- autoload(library(option),[merge_options/3,option/2]).
 
 :- predicate_options(zopen/3, 3,
-                     [ format(oneof([gzip,deflate])),
+                     [ format(oneof([gzip,deflate,raw_deflate])),
                        multi_part(boolean),
                        close_parent(boolean),
                        level(between(0,9))
