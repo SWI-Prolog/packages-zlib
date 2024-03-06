@@ -325,10 +325,12 @@ zcontrol(void *handle, int op, void *data)
       return 0;				/* allow switching encoding */
     default:
     { IOSTREAM *parent = ctx->stream;
-      if ( parent->magic == SIO_MAGIC )
-      { Scontrol_function ctrl;
+      if ( parent && parent->magic == SIO_MAGIC )
+      { IOFUNCTIONS *funcs;
+	Scontrol_function ctrl;
 
-	if ( (ctrl=parent->functions->control) )
+	if ( (funcs=parent->functions) &&
+	     (ctrl=funcs->control) )
 	  return (*ctrl)(parent->handle, op, data);
       }
       return -1;
@@ -360,7 +362,7 @@ zclose(void *handle)
   switch(rc)
   { case Z_OK:
       DEBUG(1, Sdprintf("%s(): Z_OK\n",
-		        (ctx->stream->flags & SIO_INPUT) ? "inflateEnd"
+			(ctx->stream->flags & SIO_INPUT) ? "inflateEnd"
 							 : "deflateEnd"));
       if ( ctx->close_parent )
       { IOSTREAM *parent = ctx->stream;
