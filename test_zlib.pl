@@ -1,11 +1,6 @@
 :- module(test_zlib,
 	  [ test_zlib/0
 	  ]).
-:- asserta(user:file_search_path(foreign, '.')).
-:- asserta(user:file_search_path(foreign, '../clib')).
-:- asserta(user:file_search_path(library, '.')).
-:- asserta(user:file_search_path(library, '../plunit')).
-:- asserta(user:file_search_path(library, '../clib')).
 
 :- use_module(library(zlib)).
 :- use_module(library(plunit)).
